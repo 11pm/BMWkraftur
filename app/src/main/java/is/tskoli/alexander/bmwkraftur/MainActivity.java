@@ -8,26 +8,28 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 public class MainActivity extends AppCompatActivity {
 
-    Scraper scrapy;
+    ListView threadList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        threadList = (ListView) findViewById(R.id.threadList);
 
     }
 
@@ -39,8 +41,17 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    protected void setListData(){
 
-    private class ThreadTask extends AsyncTask<Void, Void, Void>{
+        ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
+
+        adapter.notifyDataSetChanged();
+
+        threadList.setAdapter(adapter);
+
+    }
+
+    private class ThreadTask extends AsyncTask<Void, Void, Void> {
 
         private String title;
         private ProgressDialog dialog;
@@ -50,9 +61,27 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
 
             try {
-                Document doc = Jsoup.connect("http://bmwkraftur.is/spjall/viewforum.php?f=5").get();
+                //connect to the forum to scrape data
+                Document doc = Jsoup.connect(Config.get_api_base() + "viewforum.php?f=5").get();
 
-                Elements thread = doc.select("#pagecontent table.tablebg tbody > tr");
+                //get each html thread element
+                Elements threads = doc.select("#pagecontent table.tablebg tbody > tr");
+
+                //go through each thread element and store the data from them
+                for (Element entry : threads){
+
+                    //get the actual link to the thread
+                    String link = Config.get_api_base() + entry.select("a.topictitle").attr("href");
+                    //get the thread topic
+                    String topic = entry.select("a.topictitle").text();
+
+                    //add the thread to the list to display
+                    Thread.add(new ThreadItem(link, topic));
+
+                }
+
+                //connect the threads to the actual list
+
 
                 title = doc.title();
             } catch (IOException e) {
@@ -79,14 +108,53 @@ public class MainActivity extends AppCompatActivity {
             Log.wtf("wtf", this.title);
             TextView te = (TextView) findViewById(R.id.textView);
             te.setText(this.title);
+
+            //setListData();
+
+            ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
+
+            adapter.notifyDataSetChanged();
+
+            threadList.setAdapter(adapter);
+
+
+            dialog.dismiss();
+        }
+
+
+        protected void onPause(){
             dialog.dismiss();
         }
 
 
     }
 
+    //Adapter to covert the thread arraylist to a viewlist
+    private class ThreadAdapter extends ArrayAdapter<ThreadItem> {
 
+        public ThreadAdapter() {
+            super(MainActivity.this, R.layout.thread_list, Thread.get());
+        }
 
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+            View threadView = convertView;
+
+            //make sure we have a view
+            if (threadView == null) {
+                threadView = getLayoutInflater().inflate(R.layout.thread_list, parent, false);
+            }
+
+            ThreadItem curThread = Thread.find(position);
+
+            TextView topic = (TextView) threadView.findViewById(R.id.threadTopic);
+            topic.setText(curThread.topic);
+
+            return threadView;
+
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
