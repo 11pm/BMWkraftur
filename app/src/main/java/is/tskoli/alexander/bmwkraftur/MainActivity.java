@@ -31,23 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         threadList = (ListView) findViewById(R.id.threadList);
 
-    }
-
-    @Override
-    protected void onResume(){
-        super.onResume();
-
         new ThreadTask().execute();
-
-    }
-
-    protected void setListData(){
-
-        ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
-
-        adapter.notifyDataSetChanged();
-
-        threadList.setAdapter(adapter);
 
     }
 
@@ -75,9 +59,11 @@ public class MainActivity extends AppCompatActivity {
                     //get the thread topic
                     String topic = entry.select("a.topictitle").text();
 
-                    //add the thread to the list to display
-                    Thread.add(new ThreadItem(link, topic));
-
+                    // checks if topic is empty
+                    if(!topic.isEmpty()) {
+                        //add the thread to the list to display
+                        Thread.add(new ThreadItem(link, topic));
+                    }
                 }
 
                 //connect the threads to the actual list
@@ -106,8 +92,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void result){
             Log.wtf("wtf", this.title);
-            TextView te = (TextView) findViewById(R.id.textView);
-            te.setText(this.title);
+//            TextView te = (TextView) findViewById(R.id.textView);
+//            te.setText(this.title);
 
             //setListData();
 
