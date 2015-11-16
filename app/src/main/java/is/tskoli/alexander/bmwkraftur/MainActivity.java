@@ -1,6 +1,7 @@
 package is.tskoli.alexander.bmwkraftur;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -31,7 +33,27 @@ public class MainActivity extends AppCompatActivity {
 
         threadList = (ListView) findViewById(R.id.threadList);
 
+        threadList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View viewClicked, int position, long id) {
+
+                //create the intent we are moving to
+                Intent intent = new Intent(MainActivity.this, ThreadActivity.class);
+
+                //send the position of the clicked alarm item to the next activity
+                intent.putExtra("position", position);
+
+                //open the new activity
+                startActivity(intent);
+
+            }
+
+        });
+
         new ThreadTask().execute();
+
+
 
     }
 
@@ -60,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     String topic = entry.select("a.topictitle").text();
 
                     // checks if topic is empty
-                    if(!topic.isEmpty()) {
+                    if(topic.length() > 0) {
                         //add the thread to the list to display
                         Thread.add(new ThreadItem(link, topic));
                     }
