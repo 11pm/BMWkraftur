@@ -77,13 +77,16 @@ public class MainActivity extends AppCompatActivity {
                 for (Element entry : threads){
 
                     //get the actual link to the thread
-                    String link = Config.get_api_base() + entry.select("a.topictitle").attr("href");
+                    String link = entry.select("a.topictitle").attr("href");
+                    //Log.wtf("wtf", link);
                     //get the thread topic
                     String topic = entry.select("a.topictitle").text();
 
                     // checks if topic is empty
                     if(topic.length() > 0) {
                         //add the thread to the list to display
+                        link = Config.get_api_base() + link.substring(2);
+                        //Log.wtf("wtf", link.substring(2));
                         Thread.add(new ThreadItem(link, topic));
                     }
                 }
@@ -104,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute(){
             super.onPreExecute();
             dialog = new ProgressDialog(MainActivity.this);
-            dialog.setMessage("Loading...");
+            dialog.setMessage("Sæki þræði...");
             dialog.setIndeterminate(false);
             dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             dialog.show();
@@ -113,17 +116,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void result){
-            Log.wtf("wtf", this.title);
-//            TextView te = (TextView) findViewById(R.id.textView);
-//            te.setText(this.title);
 
-            //setListData();
-
-            ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
-
-            adapter.notifyDataSetChanged();
-
-            threadList.setAdapter(adapter);
+                
 
 
             dialog.dismiss();
