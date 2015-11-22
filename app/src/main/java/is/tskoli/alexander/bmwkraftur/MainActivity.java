@@ -117,7 +117,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void result){
 
-                
+            ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
+
+            adapter.notifyDataSetChanged();
+
+            threadList.setAdapter(adapter);
 
 
             dialog.dismiss();
