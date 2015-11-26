@@ -33,14 +33,12 @@ public class ThreadActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
 
-        TextView te = (TextView) findViewById(R.id.topic);
 
         final int position = intent.getIntExtra("position", 0);
 
         ThreadItem thread = Thread.find(position);
         currentThread = thread;
 
-        te.setText(thread.link);
 
         setTitle(thread.topic);
 
@@ -114,7 +112,7 @@ public class ThreadActivity extends AppCompatActivity {
             adapter.notifyDataSetChanged();
 
             ListView list = (ListView)findViewById(R.id.postList);
-            
+
             list.setAdapter(adapter);
 
             dialog.dismiss();
