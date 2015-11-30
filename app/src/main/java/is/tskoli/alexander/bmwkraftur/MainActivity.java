@@ -31,7 +31,7 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
 
     ListView threadList;
-
+    int page = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     public class EndlessScrollListener implements AbsListView.OnScrollListener {
 
         private int visibleThreshold = 5;
-        private int currentPage = 0;
+
         private int previousTotal = 0;
         private boolean loading = true;
 
@@ -85,13 +85,14 @@ public class MainActivity extends AppCompatActivity {
                 if (totalItemCount > previousTotal) {
                     loading = false;
                     previousTotal = totalItemCount;
-                    currentPage++;
+                    page++;
                 }
             }
             if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
                 // load the next page and add to list
                 // new Load().execute(currentPage + 1);
-                Log.wtf("next page", "onScroll ");
+                Log.wtf("next page", String.valueOf(page));
+                new ThreadTask().execute();
                 loading = true;
             }
         }
@@ -111,8 +112,21 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
 
             try {
+
+                //start from thread 2 when page is 1
+                int start = 2;
+
+
+
+                if(page == 2) {
+                    start = 35;
+                }
+                else if(page > 2){
+                    start = (page-1) * 35;
+                }
+
                 //connect to the forum to scrape data
-                Document doc = Jsoup.connect(Config.get_api_base() + "viewforum.php?f=5").get();
+                Document doc = Jsoup.connect(Config.get_api_base() + "viewforum.php?f=5&start=" + start).get();
 
                 //get each html thread element
                 Elements threads = doc.select("#pagecontent table.tablebg tbody > tr");
