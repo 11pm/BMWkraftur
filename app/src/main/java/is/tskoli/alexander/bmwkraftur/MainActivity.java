@@ -1,15 +1,21 @@
 package is.tskoli.alexander.bmwkraftur;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -25,6 +31,7 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
 
     ListView threadList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +60,45 @@ public class MainActivity extends AppCompatActivity {
 
         new ThreadTask().execute();
 
+        threadList.setOnScrollListener(new EndlessScrollListener());
 
 
+    }
+
+    public class EndlessScrollListener implements AbsListView.OnScrollListener {
+
+        private int visibleThreshold = 5;
+        private int currentPage = 0;
+        private int previousTotal = 0;
+        private boolean loading = true;
+
+        public EndlessScrollListener() {
+        }
+        public EndlessScrollListener(int visibleThreshold) {
+            this.visibleThreshold = visibleThreshold;
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                             int visibleItemCount, int totalItemCount) {
+            if (loading) {
+                if (totalItemCount > previousTotal) {
+                    loading = false;
+                    previousTotal = totalItemCount;
+                    currentPage++;
+                }
+            }
+            if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
+                // load the next page and add to list
+                // new Load().execute(currentPage + 1);
+                Log.wtf("next page", "onScroll ");
+                loading = true;
+            }
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+        }
     }
 
     private class ThreadTask extends AsyncTask<Void, Void, Void> {
@@ -150,6 +194,13 @@ public class MainActivity extends AppCompatActivity {
             //make sure we have a view
             if (threadView == null) {
                 threadView = getLayoutInflater().inflate(R.layout.thread_list, parent, false);
+            }
+
+            //changes background color of listview items
+            if (position % 2 == 1) {
+                threadView.setBackgroundColor(Color.rgb(215,218,219));
+            } else {
+                threadView.setBackgroundColor(Color.WHITE);
             }
 
             ThreadItem curThread = Thread.find(position);
