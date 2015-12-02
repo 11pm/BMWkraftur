@@ -22,5 +22,9 @@ public class Post {
             return posts.get(idx);
         }
 
+        public static void clear(){
+            posts = new ArrayList<PostItem>();
+        }
+
 
 }

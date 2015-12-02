@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -25,10 +26,16 @@ import org.jsoup.select.Elements;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.util.List;
+
 
 public class ThreadActivity extends AppCompatActivity {
 
     ThreadItem currentThread;
+    ListView list;
+    int page = 1;
+
+    Boolean stop = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,14 +50,53 @@ public class ThreadActivity extends AppCompatActivity {
         ThreadItem thread = Thread.find(position);
         currentThread = thread;
 
+        list = (ListView) findViewById(R.id.postList);
+
+
 
         setTitle(thread.topic);
 
         new ThreadTask().execute();
+        list.setOnScrollListener(new EndlessScrollListener());
 
 
 
+    }
 
+    public class EndlessScrollListener implements AbsListView.OnScrollListener {
+
+        private int visibleThreshold = 5;
+
+        private int previousTotal = 0;
+        private boolean loading = true;
+
+        public EndlessScrollListener() {
+        }
+        public EndlessScrollListener(int visibleThreshold) {
+            this.visibleThreshold = visibleThreshold;
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                             int visibleItemCount, int totalItemCount) {
+            if (loading) {
+                if (totalItemCount > previousTotal) {
+                    loading = false;
+                    previousTotal = totalItemCount;
+                    page++;
+                }
+            }
+            if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
+                // load the next page and add to list
+                Log.wtf("next page", String.valueOf(page));
+                new ThreadTask().execute();
+                loading = true;
+            }
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+        }
     }
 
     private class ThreadTask extends AsyncTask<Void, Void, Void> {
@@ -63,8 +109,46 @@ public class ThreadActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
 
             try {
+
+                int start = 0;
+                int postCount = 0;
+
                 //connect to the forum to scrape data
-                Document doc = Jsoup.connect(currentThread.link).get();
+                Document doc = Jsoup.connect(currentThread.link + "&start=" + start).get();
+
+                ListView l = (ListView) findViewById(R.id.threadList);
+
+                Elements pageC = doc.select("#pagecontent table:first-child .gensmall");
+                String postC = pageC.get(0).text();
+
+                String[] parts = postC.split(" ");
+
+                //Log.wtf("wtf", parts[1]);
+
+                postCount = Integer.parseInt(parts[1]);
+
+                //int pages = (int) Math.ceil((double) postCount / 15);
+
+                //if we are on last page
+                /*if(page == pages){
+                    //list.setOnScrollListener();
+
+                    stop = true;
+
+                }*/
+                if(page == 1){
+                    Post.clear();
+                }
+                else if(page == 2) {
+                    start = 15;
+                }
+                else if(page > 2){
+                    start = (page-1) * 15;
+                }
+
+
+                //Post.clear();
+
 
                 //get each html thread element
                 Elements posts = doc.select("#pagecontent table.tablebg");
@@ -72,15 +156,8 @@ public class ThreadActivity extends AppCompatActivity {
                 //go through each thread element and store the data from them
                 for (Element post : posts){
 
-                    Log.wtf("wtf", post.toString());
-
-                    //get post author
-                    String author  = post.select("tr:nth-child(2).row1 .postauthor").text();
-                    //
-                    String content = post.select("tr:nth-child(3) td:nth-child(2) .postbody:first-child").text();
-
-                    Log.wtf("wtf", author);
-                    Log.wtf("wtf", content);
+                    String author = post.select(".postauthor").text();
+                    String content = post.select(".postbody:first-child").text();
 
                     if (author.length() > 0 && content.length() > 0){
                         Post.add(new PostItem(author, content));
@@ -88,10 +165,6 @@ public class ThreadActivity extends AppCompatActivity {
 
                 }
 
-                //connect the threads to the actual list
-
-
-                title = doc.title();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.wtf("wtf", "site not found");
@@ -114,13 +187,19 @@ public class ThreadActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void result){
 
+            ListView list = (ListView)findViewById(R.id.postList);
             ArrayAdapter<PostItem> adapter = new PostAdapter();
+
+            int index = list.getFirstVisiblePosition();
+            View v = list.getChildAt(0);
+            int top = (v == null) ? 0 : (v.getTop() - list.getPaddingTop());
 
             adapter.notifyDataSetChanged();
 
-            ListView list = (ListView)findViewById(R.id.postList);
-
             list.setAdapter(adapter);
+
+            list.setSelectionFromTop(index, top);
+
 
             dialog.dismiss();
         }
@@ -130,6 +209,11 @@ public class ThreadActivity extends AppCompatActivity {
             dialog.dismiss();
         }
 
+        //clear post when backed
+
+        protected void OnBackPressed(){
+            Post.clear();
+        }
 
     }
 
