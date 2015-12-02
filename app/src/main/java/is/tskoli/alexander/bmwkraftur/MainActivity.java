@@ -27,6 +27,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        final DatabaseHandler db = DatabaseHandler.getInstance(this);
 
         threadList = (ListView) findViewById(R.id.threadList);
 
@@ -51,6 +60,23 @@ public class MainActivity extends AppCompatActivity {
                 //send the position of the clicked alarm item to the next activity
                 intent.putExtra("position", position);
 
+                List<ThreadManager> listss = db.getAllItems();
+
+                boolean taken = false;
+
+                for (ThreadManager al : listss) {
+                    if (al.getLink().equals(Thread.find(position).threadNumber)) {
+                        taken = true;
+                        break;
+                    }
+                    else {
+                            Log.wtf("wtf", " helvíti");
+                    }
+                }
+                if (!taken){
+                    db.addToList(Thread.find(position).threadNumber);
+                }
+
                 //open the new activity
                 startActivity(intent);
 
@@ -62,7 +88,25 @@ public class MainActivity extends AppCompatActivity {
 
         threadList.setOnScrollListener(new EndlessScrollListener());
 
+    }
 
+    // finds the thread number in the link
+    public static String getThreadNum(String params)
+    {
+
+        try {
+            String t = null;
+            Pattern p = Pattern.compile("(?<=t=).*?(?=&|$)");
+            Matcher m = p.matcher(params);
+            while (m.find()) {
+                t = m.group();
+            }
+
+            return t;
+        } catch (PatternSyntaxException ex) {
+            // error handling
+            return ex.toString();
+        }
     }
 
     public class EndlessScrollListener implements AbsListView.OnScrollListener {
@@ -90,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
             }
             if (!loading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + visibleThreshold)) {
                 // load the next page and add to list
-                // new Load().execute(currentPage + 1);
                 Log.wtf("next page", String.valueOf(page));
                 new ThreadTask().execute();
                 loading = true;
@@ -136,7 +179,9 @@ public class MainActivity extends AppCompatActivity {
 
                     //get the actual link to the thread
                     String link = entry.select("a.topictitle").attr("href");
-                    //Log.wtf("wtf", link);
+
+                    String threadNumber = getThreadNum(link);
+
                     //get the thread topic
                     String topic = entry.select("a.topictitle").text();
 
@@ -145,10 +190,9 @@ public class MainActivity extends AppCompatActivity {
                         //add the thread to the list to display
                         link = Config.get_api_base() + link.substring(2);
                         //Log.wtf("wtf", link.substring(2));
-                        Thread.add(new ThreadItem(link, topic));
+                        Thread.add(new ThreadItem(link, threadNumber, topic));
                     }
                 }
-
                 //connect the threads to the actual list
 
 
@@ -177,9 +221,17 @@ public class MainActivity extends AppCompatActivity {
 
             ArrayAdapter<ThreadItem> adapter = new ThreadAdapter();
 
+
+            int index = threadList.getFirstVisiblePosition();
+            View v = threadList.getChildAt(0);
+            int top = (v == null) ? 0 : (v.getTop() - threadList.getPaddingTop());
+
             adapter.notifyDataSetChanged();
 
             threadList.setAdapter(adapter);
+
+            // restore index and position
+            threadList.setSelectionFromTop(index, top);
 
 
             dialog.dismiss();
@@ -205,6 +257,8 @@ public class MainActivity extends AppCompatActivity {
 
             View threadView = convertView;
 
+            DatabaseHandler db = DatabaseHandler.getInstance(getContext());
+
             //make sure we have a view
             if (threadView == null) {
                 threadView = getLayoutInflater().inflate(R.layout.thread_list, parent, false);
@@ -216,6 +270,25 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 threadView.setBackgroundColor(Color.WHITE);
             }
+
+            View read = (View) threadView.findViewById(R.id.threadRead);
+
+            if (!db.getItem(1).getLink().isEmpty()) {
+
+                List<ThreadManager> listss = db.getAllItems();
+
+                for (ThreadManager al : listss) {
+                    if (al.getLink().equals(Thread.find(position).threadNumber)) {
+                        Log.wtf(Thread.find(position).threadNumber, al.getLink());
+                        read.setBackgroundColor(Color.rgb(53, 133, 81));
+                        break;
+                    }
+                    else {
+                        read.setBackgroundColor(Color.TRANSPARENT);
+                    }
+                }
+            }
+
 
             ThreadItem curThread = Thread.find(position);
 
