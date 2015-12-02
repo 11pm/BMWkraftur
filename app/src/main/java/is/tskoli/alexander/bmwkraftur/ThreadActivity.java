@@ -67,7 +67,7 @@ public class ThreadActivity extends AppCompatActivity {
                 Document doc = Jsoup.connect(currentThread.link).get();
 
                 //get each html thread element
-                Elements posts = doc.select(".pagecontent > .tablebg");
+                Elements posts = doc.select("#pagecontent table.tablebg");
 
                 //go through each thread element and store the data from them
                 for (Element post : posts){

@@ -273,19 +273,17 @@ public class MainActivity extends AppCompatActivity {
 
             View read = (View) threadView.findViewById(R.id.threadRead);
 
-            if (!db.getItem(1).getLink().isEmpty()) {
 
-                List<ThreadManager> listss = db.getAllItems();
+            List<ThreadManager> listss = db.getAllItems();
 
-                for (ThreadManager al : listss) {
-                    if (al.getLink().equals(Thread.find(position).threadNumber)) {
-                        Log.wtf(Thread.find(position).threadNumber, al.getLink());
-                        read.setBackgroundColor(Color.rgb(53, 133, 81));
-                        break;
-                    }
-                    else {
-                        read.setBackgroundColor(Color.TRANSPARENT);
-                    }
+            for (ThreadManager al : listss) {
+                if (al.getLink().equals(Thread.find(position).threadNumber)) {
+                    Log.wtf(Thread.find(position).threadNumber, al.getLink());
+                    read.setBackgroundColor(Color.rgb(53, 133, 81));
+                    break;
+                }
+                else {
+                    read.setBackgroundColor(Color.TRANSPARENT);
                 }
             }
 
